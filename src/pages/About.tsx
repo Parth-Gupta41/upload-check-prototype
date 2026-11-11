@@ -9,8 +9,8 @@ const MAP = {
     ['Open the table', 'Run a quick check', 'Hand it off'],
   ],
   slices: [
-    { name: 'Prototype MVP', mvp: true, cells: ['Pick a demo file or own CSV', 'Drop zone; files stay in the browser', 'Whole-file check; counts in Excel terms; example split row; quiet line on clean files', 'One-click fix, rechecked, with undo; guard if it makes things worse; inline rename; keep blank and repeated columns', 'Confirm once for an open confirmed problem; rename and create for commas', 'Table page with receipt; quick check (demo); event log'] },
-    { name: 'Release 2', mvp: false, cells: ['', '.xlsx support', '"May not match" note when the header looks wrong', 'Header row picker; name columns from row 2', '', 'Receipt in the table description'] },
+    { name: 'Prototype MVP', mvp: true, cells: ['Pick a demo file or own CSV', 'Drop zone; files stay in the browser', 'Whole-file check; counts in Excel terms; example split row; "may not match" note when the header looks wrong; quiet line on clean files', 'One-click fix, rechecked, with undo; guard if it makes things worse; inline rename; keep blank and repeated columns; header row picker; name columns from row 2', 'Confirm once for an open confirmed problem; rename and create for commas', 'Table page with receipt; quick check (demo); event log'] },
+    { name: 'Release 2', mvp: false, cells: ['', '.xlsx support', 'Note when numbers are read as text', 'Fix wrong delimiters and encodings', '', 'Receipt in the table description'] },
     { name: 'Later', mvp: false, cells: ['', 'Same check for volumes and Genie file upload', 'AI explanation of why rows broke', 'Remember the fix for files from the same source', '', 'Warn in Genie when a table was created as is'] },
   ],
 }
@@ -54,14 +54,14 @@ export function AboutPage() {
 
       <h2>How the prototype behaves</h2>
       <ul>
-        <li>It checks the whole file, not the preview, and says the result in the user's units.</li>
-        <li>It shows one real example of a record that was split into several rows.</li>
-        <li>It never fixes anything automatically. The fix is offered only when rows don't fit and only if it helps; the numbers are rechecked afterwards.</li>
-        <li>It never blocks Create. It asks once when a confirmed problem is still open. A comma in a column name gets a rename, because the platform can't accept it.</li>
-        <li>It has two levels only: "won't match" with numbers and a fix, and "may not match" as a note.</li>
-        <li>It claims only what it checked: "matching your file", never "your data looks good".</li>
+        <li>The whole file is checked, and the result is given in the user's units: rows in the file against rows in the table.</li>
+        <li>One real example shows a record that was split into several rows.</li>
+        <li>Nothing is fixed automatically. The fix appears only when rows don't fit and only if it helps, and the numbers are rechecked afterwards.</li>
+        <li>Create is never blocked. When a confirmed problem is still open, one dialog asks before creating. A comma in a column name gets a rename, because the platform can't accept it.</li>
+        <li>There are two levels: "won't match", with numbers and a fix, and "may not match", as a note.</li>
+        <li>The success line says only what was checked: "matching your file", never "your data looks good".</li>
         <li>Clean files get one quiet line and nothing to click.</li>
-        <li>Every table created keeps a receipt that says whether it matched, including "created as is".</li>
+        <li>Every table keeps a receipt that says whether it matched. A table created with a problem still open, including an unconfirmed header, says "created as is".</li>
       </ul>
 
       <h2>Evidence</h2>
@@ -72,7 +72,7 @@ export function AboutPage() {
         <tr><td>Census population (.xlsx)</td><td>The title sentence became a column name, other columns were named _c1 to _c7, numbers were read as text</td></tr>
         <tr><td>Store sales test file, 120 records</td><td>125 rows; a repeated column was dropped</td></tr>
       </tbody></table>
-      <p>These files were chosen because they were likely to break, so they show the failure is real, not how often it happens. In a scan of 503 public CSVs from FiveThirtyEight, this prototype's reader found 12 with line breaks inside cells, and the fix recovered the exact record count in all 12. In several of them the first broken row came after row 50, beyond the preview. Forcing the setting on a clean file with one stray quote turned 151,671 rows into 10, which is why the fix is guarded.</p>
+      <p>These files were chosen because they were likely to break, so they show the failure is real, not how often it happens. In a scan of 503 public CSVs from FiveThirtyEight, this prototype's reader found 12 with line breaks inside cells, and the fix recovered the exact record count in all 12. In 5 of the 12 the first broken row came after row 50, beyond the preview. Forcing the setting on a clean file with one stray quote turned 151,671 rows into 10, which is why the fix is guarded.</p>
 
       <h2>How we'd measure it</h2>
       <ul>
