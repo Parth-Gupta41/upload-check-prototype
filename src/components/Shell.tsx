@@ -52,7 +52,6 @@ export function Shell({ children }: { children: ReactNode }) {
         <span><strong>{copy.banner}</strong></span>
         <nav aria-label="Prototype">
           <Link to="/">Guide</Link>
-          <Link to="/about">About this PRD</Link>
           <ModeToggle />
           <button className="linklike" style={{ background: 'none', border: 0, cursor: 'pointer', display: 'inline-flex', gap: 4, alignItems: 'center' }} onClick={() => setState({ logOpen: !logOpen })}>
             <Activity size={13} /> Event log {events > 0 && <span className="badge">{events}</span>}
