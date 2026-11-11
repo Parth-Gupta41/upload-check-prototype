@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   FileText, X, Info, TriangleAlert, CircleCheck, LoaderCircle, Table2, List, Database, Folder, ChevronDown, Calendar,
 } from 'lucide-react'
-import { copy } from '../copy'
+import { clip, copy } from '../copy'
 import { SCENARIOS, scenarioText } from '../scenarios'
 import { getState, loadFile, log, MAX_BYTES, patchUpload, reanalyze, setMultiline, setState, useStore, type Upload as U } from '../state/store'
 import { active, finalColumns, type FinalColumn, type TableRecord } from '../engine/table'
@@ -95,6 +95,10 @@ interface VM {
   headerSuspect: Analysis['columnsA']['headerSuspect']
   row2Labels: boolean
   confirmed: boolean
+  // What the panel shows. While the header question is open, a comma in row 1 is a symptom of the
+  // wrong header, so it isn't shown as its own problem (Create still renames it if row 1 is kept).
+  commaPanel: FinalColumn[]
+  confirmedPanel: boolean
 }
 
 function viewModel(u: U, mode: 'today' | 'proposed'): VM | null {
@@ -113,7 +117,9 @@ function viewModel(u: U, mode: 'today' | 'proposed'): VM | null {
   const headerSuspect = (u.opts.headerRow ?? 1) === 1 ? issues.headerSuspect : null
   const row2Labels = !u.opts.row2AsHeader && issues.row2Labels && blankOpen.length > 0
   const confirmed = rowsProblem === 'fixable' || rowsProblem === 'guard' || blankOpen.length > 0 || dupOpen.length > 0 || commaOpen.length > 0
-  return { an, cols, dropped, rowsProblem, blankOpen, dupOpen, commaOpen, headerSuspect, row2Labels, confirmed }
+  const commaPanel = headerSuspect ? [] : commaOpen
+  const confirmedPanel = rowsProblem === 'fixable' || rowsProblem === 'guard' || blankOpen.length > 0 || dupOpen.length > 0 || commaPanel.length > 0
+  return { an, cols, dropped, rowsProblem, blankOpen, dupOpen, commaOpen, headerSuspect, row2Labels, confirmed, commaPanel, confirmedPanel }
 }
 
 /* ---------- preview screen ---------- */
@@ -212,44 +218,45 @@ function CheckArea({ u, vm, onView }: { u: U; vm: VM | null; onView: () => void 
         <div>
           {vm.rowsProblem === 'leftover'
             ? <>{n(act.rows)} rows. {copy.leftover(act.bad)} <button className="linkbtn" onClick={onView}>{copy.view(act.bad)}</button></>
-            : vm.confirmed ? `${n(act.rows)} rows, matching your file.` : keptAll ? copy.okMatch(act.rows, vm.cols.length) : copy.okMatchSome(act.rows, vm.cols.length)}
+            : vm.confirmedPanel ? `${n(act.rows)} rows, matching your file.` : keptAll ? copy.okMatch(act.rows, vm.cols.length) : copy.okMatchSome(act.rows, vm.cols.length)}
         </div>
         {f.multiline && <div className="muted">{copy.okFixed} <button className="linkbtn" onClick={() => setMultiline(false, 'fix')}>{copy.undo}</button></div>}
-        {!vm.confirmed && timing}
+        {!vm.confirmedPanel && timing}
       </div>
     </div>
   )
 
+  const colsBlockPresent = vm.blankOpen.length > 0 || vm.dupOpen.length > 0 || vm.commaPanel.length > 0
   const rowsBlock: ReactNode =
     vm.rowsProblem === 'fixable' ? (
-      <>
-        <p>{copy.rowsCompare(an.B.rows, an.A.rows)}</p>
-        <p>{copy.rowsCause}</p>
+      <div className="rows-split">
+        <div>
+          <p>{copy.rowsCompare(an.B.rows, an.A.rows)} {copy.rowsCause}</p>
+          <div className="actions">
+            <button className="btn primary" onClick={() => { log('fix_clicked', {}); setMultiline(true, 'fix') }}>{copy.fixRows}</button>
+            <button className="linkbtn" onClick={onView}>{copy.viewBad(an.A.bad)}</button>
+          </div>
+          <div className="subnote">{copy.settingName}{!colsBlockPresent && <> · {copy.checkedIn(Math.max(an.A.rows, an.B.rows), an.ms)}</>}</div>
+        </div>
         {an.example && (
           <div className="example">
             <div>{copy.example(an.example.recordNo, an.example.parts.length)}</div>
-            <pre>{an.example.parts.slice(0, 4).map((p, i) => <div key={i}><span className="rowtag">{String(i + 1).padStart(2, ' ')}  </span>{p.length > 90 ? p.slice(0, 90) + '...' : p}</div>)}{an.example.parts.length > 4 && <div className="rowtag">    and {an.example.parts.length - 4} more</div>}</pre>
+            <pre>{an.example.parts.slice(0, 3).map((p, i) => <div key={i}><span className="rowtag">{String(i + 1).padStart(2, ' ')}  </span>{p.length > 90 ? p.slice(0, 90) + '...' : p}</div>)}{an.example.parts.length > 3 && <div className="rowtag">    and {an.example.parts.length - 3} more</div>}</pre>
           </div>
         )}
-        <div className="actions">
-          <button className="btn primary" onClick={() => { log('fix_clicked', {}); setMultiline(true, 'fix') }}>{copy.fixRows}</button>
-          <span className="setting-note">{copy.settingName}</span>
-          <button className="linkbtn" onClick={onView}>{copy.viewBad(an.A.bad)}</button>
-        </div>
-      </>
+      </div>
     ) : vm.rowsProblem === 'guard' ? (
       <p>{copy.guardRows(an.A.bad)} <button className="linkbtn" onClick={onView}>{copy.view(an.A.bad)}</button></p>
     ) : null
 
-  const lastBlank = vm.blankOpen[vm.blankOpen.length - 1]
-  const colsBlock = (vm.blankOpen.length > 0 || vm.dupOpen.length > 0 || vm.commaOpen.length > 0) && (
+  const colsBlock = (vm.blankOpen.length > 0 || vm.dupOpen.length > 0 || vm.commaPanel.length > 0) && (
     <div className={rowsBlock || vm.rowsProblem !== 'none' ? 'cols' : ''}>
       {(rowsBlock || vm.rowsProblem !== 'none') && <h4>{copy.columns}</h4>}
       {vm.blankOpen.length > 0 && (
         <div className="colitem">
           {copy.blankCols(vm.blankOpen.length)}
           <div className="actions">
-            <button className="btn" onClick={() => { patchUpload((x) => ({ fixes: { ...x.fixes, keepBlank: true } })); log('column_fix_applied', { type: 'blank' }) }}>{copy.keepBlank(vm.blankOpen[0] + 1, lastBlank + 1, vm.blankOpen.length)}</button>
+            <button className="btn" onClick={() => { patchUpload((x) => ({ fixes: { ...x.fixes, keepBlank: true } })); log('column_fix_applied', { type: 'blank' }) }}>{copy.keepBlank(vm.blankOpen.map((i) => i + 1))}</button>
             {vm.row2Labels && <><span className="muted">{copy.row2Hint}</span><button className="btn" onClick={() => { log('column_fix_applied', { type: 'row2' }); reanalyze({ ...u.opts, row2AsHeader: true }) }}>{copy.row2Action}</button></>}
           </div>
         </div>
@@ -264,13 +271,13 @@ function CheckArea({ u, vm, onView }: { u: U; vm: VM | null; onView: () => void 
           </div>
         </div>
       )}
-      {vm.commaOpen.length === 1 && <CommaOne col={vm.commaOpen[0]} />}
-      {vm.commaOpen.length > 1 && (
+      {vm.commaPanel.length === 1 && <CommaOne col={vm.commaPanel[0]} />}
+      {vm.commaPanel.length > 1 && (
         <div className="colitem">
-          {copy.commaColMany(vm.commaOpen.length)}
+          {copy.commaColMany(vm.commaPanel.length)}
           <div className="actions">
-            <button className="btn" onClick={() => { patchUpload((x) => ({ fixes: { ...x.fixes, renameCommas: true } })); log('column_fix_applied', { type: 'comma', count: vm.commaOpen.length }) }}>
-              {copy.renameAll(suggestName(vm.commaOpen[0].name))}
+            <button className="btn" onClick={() => { patchUpload((x) => ({ fixes: { ...x.fixes, renameCommas: true } })); log('column_fix_applied', { type: 'comma', count: vm.commaPanel.length }) }}>
+              {copy.renameAll(clip(suggestName(vm.commaPanel[0].name), 48))}
             </button>
           </div>
         </div>
@@ -286,8 +293,9 @@ function CheckArea({ u, vm, onView }: { u: U; vm: VM | null; onView: () => void 
           <button className="iconbtn" aria-label="Dismiss" onClick={() => patchUpload({ notice: null })}><X size={14} /></button>
         </div>
       )}
-      {vm.confirmed ? (
-        <div className="alert warn">
+      {vm.headerSuspect && <HeaderSuspect u={u} hs={vm.headerSuspect} rows={act.firstRows} />}
+      {vm.confirmedPanel ? (
+        <div className="alert warn" style={vm.headerSuspect ? { marginTop: 8 } : undefined}>
           <TriangleAlert size={16} className="ico" />
           <div className="content">
             <h3>{copy.wontMatch}</h3>
@@ -295,13 +303,12 @@ function CheckArea({ u, vm, onView }: { u: U; vm: VM | null; onView: () => void 
             {!rowsBlock && vm.rowsProblem !== 'none' && rowsOkLine}
             {!rowsBlock && vm.rowsProblem === 'none' && f.multiline && rowsOkLine}
             {colsBlock}
-            <div style={{ marginTop: 8 }}>{timing}</div>
+            {(vm.rowsProblem !== 'fixable' || colsBlockPresent) && <div style={{ marginTop: 8 }}>{timing}</div>}
           </div>
         </div>
       ) : (
         !vm.headerSuspect && rowsOkLine
       )}
-      {vm.headerSuspect && <HeaderSuspect u={u} hs={vm.headerSuspect} rows={act.firstRows} />}
     </div>
   )
 }
@@ -323,7 +330,7 @@ function CommaOne({ col }: { col: FinalColumn }) {
 function HeaderSuspect({ u, hs, rows }: { u: U; hs: NonNullable<VM['headerSuspect']>; rows: string[][] }) {
   const [row, setRow] = useState(hs.suggestedRow || 2)
   return (
-    <div className="alert info" style={{ marginTop: 8 }}>
+    <div className="alert info">
       <Info size={16} className="ico" />
       <div className="content">
         <h3>{copy.mayNotMatch}</h3>
@@ -332,7 +339,7 @@ function HeaderSuspect({ u, hs, rows }: { u: U; hs: NonNullable<VM['headerSuspec
           <span>{copy.headerAsk}</span>
           <span className="input select" style={{ height: 28, maxWidth: 360 }}>
             <select aria-label="Header row" value={row} onChange={(e) => setRow(Number(e.target.value))} style={{ border: 0, background: 'transparent', width: '100%' }}>
-              {rows.slice(0, 8).map((r, i) => <option key={i} value={i + 2}>Row {i + 2}: {r.filter((x) => x.trim()).slice(0, 3).join(', ').slice(0, 50) || '(blank)'}</option>)}
+              {rows.slice(0, 8).map((r, i) => <option key={i} value={i + 2}>Row {i + 2}: {clip(r.filter((x) => x.trim()).slice(0, 3).join(', '), 50) || '(blank)'}</option>)}
             </select>
           </span>
           <button className="btn" onClick={() => { log('column_fix_applied', { type: 'header_row', row }); reanalyze({ ...u.opts, headerRow: row }) }}>{copy.useRow}</button>
@@ -462,15 +469,16 @@ function createTable(u: U, mode: 'today' | 'proposed'): string {
   const fileRows = an.rowState === 'fixable' ? an.B.rows : an.A.bad === 0 ? an.A.rows : null
   const renamed = cols.filter((c) => s.header[c.src].trim() !== '' && c.name !== s.header[c.src].trim() && s.header[c.src].includes(',')).map((c) => ({ from: s.header[c.src], to: c.name }))
   const name = (u.tableName || 'new_table').toLowerCase()
+  const headerUnconfirmed = mode === 'proposed' && (u.opts.headerRow ?? 1) === 1 && !!active(an, u.fixes).cols.headerSuspect
   const rec: TableRecord = {
     name, catalog: 'workspace', schema: 'default', fileName: u.fileName, mode,
     createdAt: new Date().toISOString(), rows: s.rows, fileRows, badRows: s.bad,
-    asIs: s.bad > 0 || dropped.length > 0,
+    asIs: s.bad > 0 || dropped.length > 0 || headerUnconfirmed,
     columns: cols.map((c) => ({ name: c.name, type: types[c.src] })),
     sample: s.preview.map((r) => cols.map((c) => r[c.src] ?? '')),
-    metric, renamed, droppedCount: dropped.length,
+    metric, renamed, droppedCount: dropped.length, headerUnconfirmed,
   }
   setState((st) => ({ tables: { ...st.tables, [name]: rec }, uploadsByTable: { ...st.uploadsByTable, [name]: u } }))
-  log('table_created', { as_is: rec.asIs, rows: rec.rows, file_rows: rec.fileRows ?? 'unknown', mode })
+  log('table_created', { as_is: rec.asIs, rows: rec.rows, file_rows: rec.fileRows ?? 'unknown', header_unconfirmed: headerUnconfirmed, mode })
   return name
 }
