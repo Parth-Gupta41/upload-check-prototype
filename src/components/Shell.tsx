@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import {
   PanelLeft, Search, Plus, Folder, Clock, Shapes, Workflow, Cloud, Compass, Store, SquareTerminal, FileCode,
@@ -35,9 +35,20 @@ export function Shell({ children }: { children: ReactNode }) {
   const loc = useLocation()
   const uid = useStore((s) => s.upload?.id)
   useEffect(() => { document.getElementById('main')?.scrollTo(0, 0) }, [loc.pathname, uid])
+  // Drawers open below the banner, so the mode switch stays usable while one is open.
+  const bannerRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = bannerRef.current
+    if (!el) return
+    const set = () => document.documentElement.style.setProperty('--banner-h', `${el.offsetHeight}px`)
+    set()
+    const ro = new ResizeObserver(set)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
   return (
     <div className="app">
-      <div className="banner" role="note">
+      <div className="banner" role="note" ref={bannerRef}>
         <span><strong>{copy.banner}</strong></span>
         <nav aria-label="Prototype">
           <Link to="/">Guide</Link>
@@ -57,9 +68,9 @@ export function Shell({ children }: { children: ReactNode }) {
           <Layers size={18} aria-hidden="true" />
           <span>{copy.product}</span>
         </div>
-        <div className="search" aria-hidden="true"><Search size={15} /> Search data, notebooks, recents, and more... <kbd>⌘ + P</kbd></div>
+        <div className="search" aria-hidden="true"><Search size={15} /> <span className="search-text">Search data, notebooks, recents, and more...</span> <kbd>⌘ + P</kbd></div>
         <div className="top-right">
-          <span>workspace <ChevronDown size={12} style={{ verticalAlign: 'middle' }} /></span>
+          <span className="ws">workspace <ChevronDown size={12} style={{ verticalAlign: 'middle' }} /></span>
           <span className="avatar" aria-label="Signed in as Maya">M</span>
         </div>
       </header>

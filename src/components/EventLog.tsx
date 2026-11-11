@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { X } from 'lucide-react'
+import { copy } from '../copy'
 import { setState, useStore } from '../state/store'
 
 const METRIC: Record<string, string> = {
@@ -11,13 +13,17 @@ const METRIC: Record<string, string> = {
 
 export function EventLog() {
   const events = useStore((s) => s.events)
-  const copyJson = () => navigator.clipboard?.writeText(JSON.stringify(events, null, 2))
+  const [copyState, setCopyState] = useState<'idle' | 'ok' | 'fail'>('idle')
+  const copyJson = async () => {
+    try { await navigator.clipboard.writeText(JSON.stringify(events, null, 2)); setCopyState('ok') } catch { setCopyState('fail') }
+    window.setTimeout(() => setCopyState('idle'), 2000)
+  }
   return (
     <aside className="drawer" aria-label="Event log">
       <header>
         <h2>Event log</h2>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn small" onClick={copyJson}>Copy as JSON</button>
+          <button className="btn small" onClick={copyJson} aria-live="polite">{copyState === 'ok' ? copy.copied : copyState === 'fail' ? copy.copyFailed : 'Copy as JSON'}</button>
           <button className="btn small" onClick={() => setState({ events: [] })}>Clear</button>
           <button className="iconbtn" aria-label="Close event log" onClick={() => setState({ logOpen: false })}><X size={16} /></button>
         </div>

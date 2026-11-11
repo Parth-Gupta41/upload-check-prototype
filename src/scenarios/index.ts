@@ -149,7 +149,7 @@ function stray() {
 }
 
 export const SCENARIOS: Scenario[] = [
-  { id: 'reviews', title: 'Customer reviews', fileName: 'customer_reviews.csv', blurb: 'Reviews with line breaks inside them. Watch the row count.', metricColumn: 'stars', build: reviews },
+  { id: 'reviews', title: 'Customer reviews', fileName: 'customer_reviews.csv', blurb: '2,000 reviews, some with line breaks inside them. Watch the row count.', metricColumn: 'stars', build: reviews },
   { id: 'survey', title: 'Survey export', fileName: 'survey_export.csv', blurb: 'Blank column names, a second header row, and a comma in one name.', build: survey },
   { id: 'sales', title: 'Store sales', fileName: 'store_sales.csv', blurb: 'Like the test file from the PRD: 120 records, one duplicate column.', metricColumn: 'Units (#)', build: sales },
   { id: 'population', title: 'Population report', fileName: 'population_report.csv', blurb: 'A title row sits above the real header.', emulateExcel: true, build: population },

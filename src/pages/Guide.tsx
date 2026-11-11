@@ -24,7 +24,7 @@ export function GuidePage() {
 
       <h2>Try it in three minutes</h2>
       <ol className="steps">
-        <li>Open <strong>Customer reviews</strong> in Today mode and click Create table. Note the row count and the quick check on the table page.</li>
+        <li>Open <strong>Customer reviews</strong> in Today mode and click Create table. The file has 2,000 reviews. Note the row count and the quick check on the table page.</li>
         <li>Click <strong>Open in Proposed mode</strong> on that page. Read the panel above the preview, look at the example row, and click <strong>Keep line breaks inside cells</strong>.</li>
         <li>Create the table again and compare the row count, the quick check and the upload check line.</li>
         <li>Try <strong>Stray quote</strong> to see why the fix is never applied automatically, and <strong>Clean file</strong> to see that nothing gets in the way when the file is fine.</li>
@@ -32,7 +32,7 @@ export function GuidePage() {
       <p><button className="btn primary" onClick={() => open('reviews', 'today')}>Start with Customer reviews in Today mode</button></p>
 
       <h2>Demo files</h2>
-      <p className="muted">All demo files are generated in your browser. Numbers on screen come from reading the file, not from a script.</p>
+      <p className="muted">All demo files are generated in your browser, and every number on screen is computed from the file. In Today mode, Create is blocked on Survey export, Store sales and Population report, as it is in Databricks, because a column name contains a comma. Hover the button to see the message.</p>
       <div className="cards">
         {SCENARIOS.map((s) => (
           <div className="scard" key={s.id}>
