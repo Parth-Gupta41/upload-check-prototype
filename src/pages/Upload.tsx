@@ -246,7 +246,10 @@ function CheckArea({ u, vm, onView }: { u: U; vm: VM | null; onView: () => void 
         )}
       </div>
     ) : vm.rowsProblem === 'guard' ? (
-      <p>{copy.guardRows(an.A.bad)} <button className="linkbtn" onClick={onView}>{copy.view(an.A.bad)}</button></p>
+      <>
+        <p>{copy.guardRows(an.A.bad)} <button className="linkbtn" onClick={onView}>{copy.view(an.A.bad)}</button></p>
+        <p className="muted">{copy.guardWhy(an.B.rows, an.A.rows)}</p>
+      </>
     ) : null
 
   const colsBlock = (vm.blankOpen.length > 0 || vm.dupOpen.length > 0 || vm.commaPanel.length > 0) && (
