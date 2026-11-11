@@ -28,6 +28,7 @@ export const copy = {
   settingName: 'Setting: Rows span multiple lines',
   viewBad: (k: number) => `View rows that didn't read cleanly (${n(k)})`,
   guardRows: (k: number) => `${n(k)} ${s(k, "row doesn't", "rows don't")} fit the columns.`,
+  guardWhy: (after: number, before: number) => `Keeping line breaks inside cells would turn ${n(before)} rows into ${n(after)}, so that fix isn't offered.`,
   madeWorse: (after: number, before: number) => `That made it worse: ${n(after)} rows instead of ${n(before)}. We undid it.`,
 
   columns: 'Columns',
