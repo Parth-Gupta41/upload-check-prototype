@@ -66,4 +66,5 @@ export interface TableRecord {
   metric: { column: string; avg: number } | null
   renamed: { from: string; to: string }[]
   droppedCount: number
+  headerUnconfirmed?: boolean
 }
