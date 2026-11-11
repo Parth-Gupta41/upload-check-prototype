@@ -4,6 +4,7 @@ import { parseLine, readerA, readerB, normalize } from '../src/engine/csv'
 import { analyzeText, fixIsSafe, combineHeader } from '../src/engine/analyze'
 import { finalColumns, NO_FIXES } from '../src/engine/table'
 import { SCENARIOS, scenarioText } from '../src/scenarios'
+import { copy, clip } from '../src/copy'
 
 const an = (t: string, o = {}) => analyzeText(t, 'f.csv', t.length, o)
 
@@ -110,5 +111,23 @@ describe('copy rules', () => {
       expect(t, f).not.toMatch(/\bplease\b/i)
       expect(t, f).not.toMatch(/integrity verification/i)
     }
+  })
+})
+
+describe('copy helpers', () => {
+  it('describes blank-column ranges honestly', () => {
+    expect(copy.keepBlank([4])).toBe('Keep it as column_4')
+    expect(copy.keepBlank([4, 5, 6])).toBe('Keep them as column_4 to column_6')
+    expect(copy.keepBlank([4, 5, 6, 7, 8, 10, 11, 12, 13, 14])).toBe('Keep all 10 as column_4, column_5 and so on')
+  })
+  it('uses the singular for one row', () => {
+    expect(copy.modalRowsBad(1)).toBe("1 row didn't read cleanly.")
+    expect(copy.receiptAsIsNoCount('a.csv', 5000, 1)).toContain("1 row didn't read cleanly.")
+    expect(copy.modalRowsBad(3942)).toBe("3,942 rows didn't read cleanly.")
+  })
+  it('cuts very long names', () => {
+    const long = 'Table_1_Annual_estimates_of_the_resident_population_for_the_United_States'
+    expect(clip(long).length).toBe(60)
+    expect(clip('short')).toBe('short')
   })
 })
