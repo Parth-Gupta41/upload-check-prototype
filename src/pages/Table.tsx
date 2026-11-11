@@ -31,7 +31,7 @@ export function TablePage() {
       {t.asIs ? (
         <div className="okline warnish"><TriangleAlert size={16} className="ico" />
           <div>
-            {t.badRows > 0 ? (t.fileRows ? copy.receiptAsIs(t.fileName, t.rows, t.fileRows, t.badRows) : copy.receiptAsIsNoCount(t.fileName, t.rows, t.badRows)) : `Created as is from ${t.fileName}: ${n(t.rows)} rows.`}
+            {t.headerUnconfirmed && t.badRows === 0 ? copy.receiptHeader(t.fileName, t.rows) : t.badRows > 0 ? (t.fileRows ? copy.receiptAsIs(t.fileName, t.rows, t.fileRows, t.badRows) : copy.receiptAsIsNoCount(t.fileName, t.rows, t.badRows)) : `Created as is from ${t.fileName}: ${n(t.rows)} rows.`}
             {t.droppedCount > 0 && <> {copy.receiptDropped(t.droppedCount)}</>}
             {upload && <> <button className="linkbtn" onClick={reopen}>{copy.seeCheck}</button></>}
           </div>
@@ -108,7 +108,9 @@ export function TablePage() {
 }
 
 export function CatalogPage() {
-  const tables = useStore((s) => Object.values(s.tables))
+  // Select the stored object, then list it: a selector that builds a new array every call re-renders forever.
+  const byName = useStore((s) => s.tables)
+  const tables = Object.values(byName)
   return (
     <div className="page">
       <div className="crumb"><span>Catalog Explorer</span> › workspace › default ›</div>
